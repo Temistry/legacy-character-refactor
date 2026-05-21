@@ -470,14 +470,12 @@ ctest --test-dir build -C Debug --output-on-failure
 ## 저장소 구조
 
 ```text
-docs/
-  01_legacy_problem.md
-  02_refactoring_strategy.md
-  03_architecture_overview.md
-  04_behavior_preserving_refactoring.md
-  05_risk_and_limitations.md
-  06_public_release_checklist.md
-src/
+  docs/
+    01_legacy_problem.md
+    02_refactoring_strategy.md
+    03_architecture_overview.md
+    04_behavior_preserving_refactoring.md
+  src/
   legacy/
   refactored/
 tests/
