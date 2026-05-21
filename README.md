@@ -227,6 +227,51 @@ Character::Update()
   -> OnPostUpdate()
 ```
 
+## 테스트 가능한 경계
+
+이 구조의 목적은 클래스를 나누어 테스트 주도형 개발이 가능한 경계를 만드는 것입니다.
+
+레거시 구조에서는 하나의 동작을 확인할 때도 `LegacyCharacter` 전체 상태와 전역 registry를 준비해야 합니다.
+개선 구조에서는 접근, 재사용, lifecycle, passive, shot, effect, AI, skill을 각각 작은 단위로 테스트할 수 있습니다.
+
+```mermaid
+flowchart LR
+    subgraph Before["Before: Legacy Test Surface"]
+        Legacy["LegacyCharacter\n\nUpdate / Damage / AI / Skill\nPassive if-chain\nProjectile functions\nEffect timers\nSummon / Allocation"]
+        LegacySetup["Large setup required\n\n- many fields\n- type branches\n- timers and flags\n- global registry\n- event order"]
+        Legacy --> LegacySetup
+    end
+
+    subgraph After["After: Layer-Level Test Surface"]
+        Access["Compatibility Layer\nCharacterAccessor"]
+        Core["Lifecycle Core\nCharacter + virtual hooks"]
+        Modules["Focused Modules\nPassiveRegistry\nShotPattern\nTimedEffectList\nCharacterSlotStore\nCharacterMath\nAiDispatcher"]
+        Tests["Layer-level tests\n\nCharacterAccessorTests\nCharacterSlotStoreTests\nVirtualHookOrderTests\nRefactoredModuleDetailTests\nCharacterEquivalenceTests"]
+
+        Access --> Core
+        Core --> Modules
+        Access --> Tests
+        Core --> Tests
+        Modules --> Tests
+    end
+
+    LegacySetup -. "smaller test surface" .-> Tests
+```
+
+| Test | Target | Legacy issue | Refactored benefit |
+| --- | --- | --- | --- |
+| `CharacterAccessorTests` | access boundary | raw index access was scattered | invalid index and empty slot checks are isolated |
+| `CharacterSlotStoreTests` | lifetime/reuse | allocation policy was mixed with gameplay | acquire/release behavior is tested directly |
+| `VirtualHookOrderTests` | lifecycle order | update order was hidden inside one method | base lifecycle order is explicit |
+| `RefactoredModuleDetailTests` | module boundaries | passive/timer/shot/AI state lived near Character | modules expose small independent APIs |
+| `CharacterEquivalenceTests` | behavior preservation | refactoring can change state or event order | snapshot and event trace are compared |
+
+`CharacterAccessorTests`는 접근 계층을 검증합니다.
+`CharacterSlotStoreTests`는 객체 재사용 정책을 검증합니다.
+`VirtualHookOrderTests`는 base lifecycle 순서를 검증합니다.
+`RefactoredModuleDetailTests`는 passive, shot, effect, AI, skill 모듈이 독립 API를 갖는지 검증합니다.
+`CharacterEquivalenceTests`는 legacy와 refactored가 같은 toy 입력에서 같은 snapshot과 event trace를 내는지 검증합니다.
+
 ## 주요 변경점
 
 ### 전역 접근에서 CharacterAccessor로 분리

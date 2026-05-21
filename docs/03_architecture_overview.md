@@ -105,6 +105,26 @@ ShotPlan, ShotSpawn     -> Projectile/
 CharacterSlotStore      -> object reuse
 ```
 
+## Test Surface
+
+refactored 구조는 테스트 가능한 경계를 작게 나누는 것을 목표로 한다.
+각 테스트는 하나의 레이어 또는 하나의 refactoring risk를 다룬다.
+
+```mermaid
+flowchart TB
+    Refactored["Refactored Character System"]
+
+    Compatibility["Compatibility Tests\n\nCharacterAccessorTests\n- invalid index\n- empty slot\n- array-like access"]
+    Module["Module Tests\n\nCharacterSlotStoreTests\nRefactoredModuleDetailTests\n- acquire / release\n- passive handler count\n- shot plan\n- timed effect query\n- AI decision\n- skill cooldown state"]
+    Behavior["Behavior Preservation Tests\n\nCharacterEquivalenceTests\n- same toy input\n- state snapshot compare\n- event trace compare"]
+    Lifecycle["Lifecycle Order Tests\n\nVirtualHookOrderTests\n- base order\n- hook order\n- passive timing"]
+
+    Refactored --> Compatibility
+    Refactored --> Module
+    Refactored --> Behavior
+    Refactored --> Lifecycle
+```
+
 ## Legacy Function to Refactored Boundary
 
 | Legacy example | Problem shown | Refactored boundary |
