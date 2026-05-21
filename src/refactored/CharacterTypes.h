@@ -4,6 +4,12 @@
 
 namespace portfolio
 {
+struct Vec2
+{
+    int x = 0;
+    int y = 0;
+};
+
 enum class CharacterKind
 {
     Player,
@@ -28,6 +34,19 @@ struct UpdateInput
     int nearbyEnemyCount = 0;
     bool requestProjectile = false;
     bool requestReturn = false;
+    Vec2 targetPosition;
+};
+
+struct DamageInput
+{
+    int rawDamage = 0;
+    bool ignoreShield = false;
+};
+
+struct LifecycleTracePoint
+{
+    std::string stage;
+    int frame = 0;
 };
 
 struct CharacterEvent
@@ -61,4 +80,3 @@ struct CharacterStateSnapshot
     }
 };
 }
-

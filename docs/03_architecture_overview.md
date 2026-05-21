@@ -68,6 +68,43 @@ CharacterSlotStore
 | `AiDispatcher` | `src/refactored/AI/AiDispatcher.*` | AI 실행 지점을 별도 collaborator로 둔다. |
 | `SimpleMemoryPool` | `src/refactored/Memory/SimpleMemoryPool.h` | allocation policy를 gameplay object 밖으로 분리하는 예제를 제공한다. |
 
+## Module Detail
+
+refactored 쪽은 각 모듈이 작지만 자기 책임을 드러내는 타입과 query API를 갖는다.
+
+| Module | Added detail | Why it matters |
+| --- | --- | --- |
+| `CharacterAccessor` | `TryGet`, `IsValidIndex`, `IsOccupied`, `Clear` | raw array access를 호출부마다 직접 검사하지 않게 한다. |
+| `CharacterSlotStore` | `Contains`, `AvailableCount`, `InUseCount` | lifetime과 reuse 상태를 테스트 가능한 값으로 만든다. |
+| `TimedEffectList` | `TimedEffect`, `HasBlockingEffect`, `RemainingFrames` | timer field가 Character에 계속 늘어나는 문제를 줄인다. |
+| `PassiveRegistry` | `PassiveHandler`, `PassiveExecutionContext`, `HandlerCount` | passive if-chain을 timing과 handler 단위로 볼 수 있게 한다. |
+| `ShotPattern` | `ShotRequest`, `ShotSpawn`, `ShotPlan`, `BuildPlan` | projectile 계산과 event emission을 분리할 수 있게 한다. |
+| `AiDispatcher` | `AiIntent`, `AiDecision`, `Decide` | AI branch를 update 본문 밖에서 판단할 수 있게 한다. |
+| `SkillExecutor` | `SkillRuntimeState`, `CanExecute`, `StartCooldown` | skill cooldown과 실행 가능 여부를 Character 멤버에서 분리하는 방향을 보여준다. |
+
+```text
+Legacy field accumulation
+
+LegacyCharacter
+  skillCooldownA_
+  skillCooldownB_
+  passiveFlagA_
+  poisonTimer_
+  stunTimer_
+  burnTimer_
+  shieldTimer_
+  projectiles_
+  summon_
+
+Refactored ownership direction
+
+SkillRuntimeState        -> Skill/
+PassiveHandler          -> Passive/
+TimedEffect             -> Effects/
+ShotPlan, ShotSpawn     -> Projectile/
+CharacterSlotStore      -> object reuse
+```
+
 ## Legacy Function to Refactored Boundary
 
 | Legacy example | Problem shown | Refactored boundary |

@@ -23,6 +23,17 @@ void EmitProjectileEvent(int count, std::vector<CharacterEvent>& events)
 class StraightPattern : public ShotPattern
 {
 public:
+    ShotPlan BuildPlan(const ShotRequest& request) const override
+    {
+        ShotPlan plan;
+        ShotSpawn spawn;
+        spawn.position = request.origin;
+        spawn.direction = CharacterMath::DirectionStep(request.origin, request.target);
+        spawn.lifeTime = 2;
+        plan.spawns.push_back(spawn);
+        return plan;
+    }
+
     void Emit(const Character&, const UpdateInput&, std::vector<CharacterEvent>& events) const override
     {
         EmitProjectileEvent(1, events);
@@ -32,6 +43,23 @@ public:
 class MultiShotPattern : public ShotPattern
 {
 public:
+    ShotPlan BuildPlan(const ShotRequest& request) const override
+    {
+        ShotPlan plan;
+        const int count = CharacterMath::ProjectileCountForKind(CharacterKind::Monster, request.nearbyEnemyCount);
+        for (int i = 0; i < count; ++i)
+        {
+            ShotSpawn spawn;
+            spawn.position = request.origin;
+            spawn.position.x += i;
+            spawn.direction = CharacterMath::DirectionStep(request.origin, request.target);
+            spawn.direction.y += i - 1;
+            spawn.lifeTime = 2 + i;
+            plan.spawns.push_back(spawn);
+        }
+        return plan;
+    }
+
     void Emit(const Character&, const UpdateInput& input, std::vector<CharacterEvent>& events) const override
     {
         EmitProjectileEvent(CharacterMath::ProjectileCountForKind(CharacterKind::Monster, input.nearbyEnemyCount), events);
@@ -41,6 +69,17 @@ public:
 class DirectionalPattern : public ShotPattern
 {
 public:
+    ShotPlan BuildPlan(const ShotRequest& request) const override
+    {
+        ShotPlan plan;
+        ShotSpawn spawn;
+        spawn.position = request.origin;
+        spawn.direction = CharacterMath::DirectionStep(request.origin, request.target);
+        spawn.lifeTime = 2;
+        plan.spawns.push_back(spawn);
+        return plan;
+    }
+
     void Emit(const Character&, const UpdateInput&, std::vector<CharacterEvent>& events) const override
     {
         EmitProjectileEvent(1, events);
@@ -50,6 +89,22 @@ public:
 class SectorPattern : public ShotPattern
 {
 public:
+    ShotPlan BuildPlan(const ShotRequest& request) const override
+    {
+        ShotPlan plan;
+        const int count = CharacterMath::ProjectileCountForKind(CharacterKind::EliteMonster, request.nearbyEnemyCount);
+        for (int i = 0; i < count; ++i)
+        {
+            ShotSpawn spawn;
+            spawn.position = request.origin;
+            spawn.direction.x = i - 1;
+            spawn.direction.y = 1;
+            spawn.lifeTime = 3;
+            plan.spawns.push_back(spawn);
+        }
+        return plan;
+    }
+
     void Emit(const Character&, const UpdateInput& input, std::vector<CharacterEvent>& events) const override
     {
         EmitProjectileEvent(CharacterMath::ProjectileCountForKind(CharacterKind::EliteMonster, input.nearbyEnemyCount), events);
@@ -59,6 +114,22 @@ public:
 class HomingPattern : public ShotPattern
 {
 public:
+    ShotPlan BuildPlan(const ShotRequest& request) const override
+    {
+        ShotPlan plan;
+        const int count = CharacterMath::ProjectileCountForKind(CharacterKind::Summon, request.nearbyEnemyCount);
+        for (int i = 0; i < count; ++i)
+        {
+            ShotSpawn spawn;
+            spawn.position = request.origin;
+            spawn.direction = CharacterMath::DirectionStep(request.origin, request.target);
+            spawn.lifeTime = 3;
+            spawn.homing = true;
+            plan.spawns.push_back(spawn);
+        }
+        return plan;
+    }
+
     void Emit(const Character&, const UpdateInput& input, std::vector<CharacterEvent>& events) const override
     {
         EmitProjectileEvent(CharacterMath::ProjectileCountForKind(CharacterKind::Summon, input.nearbyEnemyCount), events);
@@ -110,4 +181,3 @@ std::unique_ptr<ShotPattern> CreateShotPatternForKind(CharacterKind kind)
     }
 }
 }
-

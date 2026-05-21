@@ -19,7 +19,10 @@ class PassiveRegistry
 {
 public:
     void AddHandler(PassiveTiming timing, const std::string& name, int energyDelta);
+    void AddHandler(const PassiveHandler& handler);
     void Execute(PassiveTiming timing, Character& character, std::vector<CharacterEvent>& events) const;
+    std::size_t HandlerCount() const;
+    std::size_t HandlerCount(PassiveTiming timing) const;
 
     static PassiveRegistry CreateDefault();
 

@@ -13,6 +13,11 @@ void PassiveRegistry::AddHandler(PassiveTiming timing, const std::string& name, 
     handlers_.push_back(handler);
 }
 
+void PassiveRegistry::AddHandler(const PassiveHandler& handler)
+{
+    handlers_.push_back(handler);
+}
+
 void PassiveRegistry::Execute(PassiveTiming timing, Character& character, std::vector<CharacterEvent>& events) const
 {
     for (std::size_t i = 0; i < handlers_.size(); ++i)
@@ -32,6 +37,24 @@ void PassiveRegistry::Execute(PassiveTiming timing, Character& character, std::v
     }
 }
 
+std::size_t PassiveRegistry::HandlerCount() const
+{
+    return handlers_.size();
+}
+
+std::size_t PassiveRegistry::HandlerCount(PassiveTiming timing) const
+{
+    std::size_t count = 0;
+    for (std::size_t i = 0; i < handlers_.size(); ++i)
+    {
+        if (handlers_[i].timing == timing)
+        {
+            ++count;
+        }
+    }
+    return count;
+}
+
 PassiveRegistry PassiveRegistry::CreateDefault()
 {
     PassiveRegistry registry;
@@ -42,4 +65,3 @@ PassiveRegistry PassiveRegistry::CreateDefault()
     return registry;
 }
 }
-

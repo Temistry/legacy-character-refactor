@@ -21,6 +21,11 @@ public:
     explicit CharacterAccessor(std::size_t size);
 
     void Set(std::size_t index, Character* character);
+    void Clear(std::size_t index);
+    bool IsValidIndex(std::size_t index) const;
+    bool IsOccupied(std::size_t index) const;
+    Character* TryGet(std::size_t index);
+    const Character* TryGet(std::size_t index) const;
     Character& operator[](std::size_t index);
     const Character& operator[](std::size_t index) const;
     std::size_t Size() const;

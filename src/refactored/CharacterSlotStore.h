@@ -23,6 +23,8 @@ public:
 
     Character* Acquire(CharacterKind kind);
     void Release(Character* character);
+    bool Contains(const Character* character) const;
+    std::size_t AvailableCount() const;
 
     std::size_t Capacity() const;
     std::size_t AllocatedCount() const;

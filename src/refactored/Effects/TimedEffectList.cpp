@@ -6,32 +6,45 @@ namespace portfolio
 {
 void TimedEffectList::Clear()
 {
-    durations_.clear();
+    effects_.clear();
 }
 
 void TimedEffectList::AddEffect(int durationFrames)
 {
-    if (durationFrames > 0)
+    AddEffect("Effect", durationFrames, false);
+}
+
+void TimedEffectList::AddEffect(const std::string& name, int durationFrames, bool blocksAction)
+{
+    if (durationFrames <= 0)
     {
-        durations_.push_back(durationFrames);
+        return;
     }
+
+    TimedEffect effect;
+    effect.name = name;
+    effect.remainingFrames = durationFrames;
+    effect.blocksAction = blocksAction;
+    effects_.push_back(effect);
 }
 
 void TimedEffectList::Update(std::vector<CharacterEvent>& events)
 {
     int expiredCount = 0;
-    for (std::size_t i = 0; i < durations_.size(); ++i)
+    for (std::size_t i = 0; i < effects_.size(); ++i)
     {
-        --durations_[i];
-        if (durations_[i] <= 0)
+        --effects_[i].remainingFrames;
+        if (effects_[i].remainingFrames <= 0)
         {
             ++expiredCount;
         }
     }
 
-    durations_.erase(
-        std::remove_if(durations_.begin(), durations_.end(), [](int duration) { return duration <= 0; }),
-        durations_.end());
+    effects_.erase(
+        std::remove_if(effects_.begin(), effects_.end(), [](const TimedEffect& effect) {
+            return effect.remainingFrames <= 0;
+        }),
+        effects_.end());
 
     for (int i = 0; i < expiredCount; ++i)
     {
@@ -44,7 +57,30 @@ void TimedEffectList::Update(std::vector<CharacterEvent>& events)
 
 int TimedEffectList::ActiveCount() const
 {
-    return static_cast<int>(durations_.size());
-}
+    return static_cast<int>(effects_.size());
 }
 
+bool TimedEffectList::HasBlockingEffect() const
+{
+    for (std::size_t i = 0; i < effects_.size(); ++i)
+    {
+        if (effects_[i].blocksAction)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+int TimedEffectList::RemainingFrames(const std::string& name) const
+{
+    for (std::size_t i = 0; i < effects_.size(); ++i)
+    {
+        if (effects_[i].name == name)
+        {
+            return effects_[i].remainingFrames;
+        }
+    }
+    return 0;
+}
+}

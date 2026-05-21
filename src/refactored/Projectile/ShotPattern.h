@@ -9,6 +9,26 @@ namespace portfolio
 {
 class Character;
 
+struct ShotRequest
+{
+    Vec2 origin;
+    Vec2 target;
+    int nearbyEnemyCount = 0;
+};
+
+struct ShotSpawn
+{
+    Vec2 position;
+    Vec2 direction;
+    int lifeTime = 0;
+    bool homing = false;
+};
+
+struct ShotPlan
+{
+    std::vector<ShotSpawn> spawns;
+};
+
 // Legacy shape:
 //   CreateStraightProjectile/CreateMultiProjectile/etc. repeated coordinate
 //   and count calculation inside Character.
@@ -21,6 +41,7 @@ class ShotPattern
 {
 public:
     virtual ~ShotPattern() {}
+    virtual ShotPlan BuildPlan(const ShotRequest& request) const = 0;
     virtual void Emit(const Character& character, const UpdateInput& input, std::vector<CharacterEvent>& events) const = 0;
 };
 

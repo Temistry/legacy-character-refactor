@@ -4,6 +4,21 @@
 
 namespace portfolio
 {
+bool SkillExecutor::CanExecute(const Character& character, const SkillData& skill, const SkillRuntimeState& state) const
+{
+    return character.IsAlive() &&
+           character.Energy() >= skill.energyCost &&
+           state.remainingCooldown <= 0;
+}
+
+SkillRuntimeState SkillExecutor::StartCooldown(const SkillData& skill) const
+{
+    SkillRuntimeState state;
+    state.remainingCooldown = skill.cooldownFrames;
+    state.queued = false;
+    return state;
+}
+
 void SkillExecutor::Execute(Character&, const SkillData& skill, std::vector<CharacterEvent>& events) const
 {
     CharacterEvent event;
@@ -12,4 +27,3 @@ void SkillExecutor::Execute(Character&, const SkillData& skill, std::vector<Char
     events.push_back(event);
 }
 }
-

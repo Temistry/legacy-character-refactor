@@ -15,6 +15,32 @@ void CharacterAccessor::Set(std::size_t index, Character* character)
     slots_[index] = character;
 }
 
+void CharacterAccessor::Clear(std::size_t index)
+{
+    ValidateIndex(index);
+    slots_[index] = nullptr;
+}
+
+bool CharacterAccessor::IsValidIndex(std::size_t index) const
+{
+    return index < slots_.size();
+}
+
+bool CharacterAccessor::IsOccupied(std::size_t index) const
+{
+    return IsValidIndex(index) && slots_[index] != nullptr;
+}
+
+Character* CharacterAccessor::TryGet(std::size_t index)
+{
+    return IsOccupied(index) ? slots_[index] : nullptr;
+}
+
+const Character* CharacterAccessor::TryGet(std::size_t index) const
+{
+    return IsOccupied(index) ? slots_[index] : nullptr;
+}
+
 Character& CharacterAccessor::operator[](std::size_t index)
 {
     ValidateIndex(index);
@@ -48,4 +74,3 @@ void CharacterAccessor::ValidateIndex(std::size_t index) const
     }
 }
 }
-

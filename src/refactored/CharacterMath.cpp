@@ -11,6 +11,11 @@ int ClampDamage(int rawDamage)
     return std::max(0, rawDamage);
 }
 
+int ClampDuration(int durationFrames)
+{
+    return std::max(0, durationFrames);
+}
+
 int EnergyGainForKind(CharacterKind kind)
 {
     switch (kind)
@@ -48,6 +53,22 @@ int DistanceSquared(int ax, int ay, int bx, int by)
     return dx * dx + dy * dy;
 }
 
+Vec2 DirectionStep(Vec2 from, Vec2 to)
+{
+    Vec2 step;
+    step.x = to.x > from.x ? 1 : (to.x < from.x ? -1 : 0);
+    step.y = to.y > from.y ? 1 : (to.y < from.y ? -1 : 0);
+    return step;
+}
+
+CharacterEvent BuildEvent(const std::string& name, int value)
+{
+    CharacterEvent event;
+    event.name = name;
+    event.value = value;
+    return event;
+}
+
 CharacterStateSnapshot BuildSnapshot(
     int id,
     CharacterKind kind,
@@ -67,4 +88,3 @@ CharacterStateSnapshot BuildSnapshot(
 }
 }
 }
-

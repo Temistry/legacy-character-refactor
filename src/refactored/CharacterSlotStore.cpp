@@ -44,6 +44,23 @@ void CharacterSlotStore::Release(Character* character)
     }
 }
 
+bool CharacterSlotStore::Contains(const Character* character) const
+{
+    for (std::size_t i = 0; i < slots_.size(); ++i)
+    {
+        if (slots_[i].object.get() == character)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+std::size_t CharacterSlotStore::AvailableCount() const
+{
+    return capacity_ - InUseCount();
+}
+
 std::size_t CharacterSlotStore::Capacity() const
 {
     return capacity_;
@@ -67,4 +84,3 @@ std::size_t CharacterSlotStore::InUseCount() const
     return count;
 }
 }
-
