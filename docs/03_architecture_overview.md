@@ -12,10 +12,11 @@ gCharacters[index] / LegacyRegistry[index]
        -> Move / Attack / ProcessAI
        -> CastSkill / UpdateSkillTimers
        -> ApplyPassiveEffects
-       -> CreateStraightProjectile / CreateMultiProjectile
+       -> CreateStraightProjectile / CreateMultiProjectile / CreateSectorProjectile
        -> SummonUnit / RecallUnit / CleanupSummon
-       -> poisonTimer / stunTimer / burnTimer / shieldTimer
-       -> skillCooldownA / passiveFlagA / passiveCounterB
+       -> poisonTimer / stunTimer / burnTimer / shieldTimer / silenceTimer
+       -> skillCooldownA~E / skillCostA~D / skillPowerA~D
+       -> passiveFlagA~E / passiveCounterA~E
        -> local utility calculations
        -> scattered new/delete
 ```
@@ -175,6 +176,7 @@ flowchart TB
 | `ClampDamage`, `ProjectileCountForKind` | 계산 함수가 Character 내부에 있음 | `CharacterMath` |
 | type-specific tuning values | 매직넘버가 분기 안에 흩어짐 | `CharacterTuningTable` |
 | skill id based values | skill 실행 근처에 cooldown, cost 값이 붙음 | `SkillDefinitionTable` |
+| raw projectile/summon allocation | gameplay 함수 안에서 `new/delete`가 직접 호출됨 | `CharacterSlotStore`, memory boundary |
 | `SummonUnit`, `CleanupSummon` | 소유권과 lifetime 처리가 분산됨 | 별도 module로 분리할 대상 |
 
 ## Lifecycle Flow

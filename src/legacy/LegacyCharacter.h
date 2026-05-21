@@ -14,7 +14,7 @@ enum class LegacyCharacterType
     Player,
     Npc,
     Monster,
-    BossMonster,
+    EliteMonster,
     Summon,
     Object
 };
@@ -73,14 +73,27 @@ private:
     void ProcessAI(const UpdateInput& input);
     void UpdateSkillTimers();
     void UpdateStatusTimers();
+    void UpdateMovementCompatibilityFlags(const UpdateInput& input);
+    void UpdateLegacyTargetCache(int candidateIndex);
+    void UpdateLegacySkillGateFlags();
+    void UpdateLegacyResourceFlags();
+    void NormalizeLegacyTimers();
+    void UpdateLegacyOwnerHostLinks();
+    void RefreshLegacySummonState();
     void UpdateLegacyEffectTriggers();
     void ApplyPassiveEffects(LegacyPassiveMoment moment, int value);
+    void ApplyLegacyDamageSideEffects(int damage);
+    void ApplyLegacyNearDeathRules(int damage);
     void CreateProjectile(int targetIndex, int skillId);
     void CreateStraightProjectile(int targetIndex);
     void CreateMultiProjectile(int targetIndex);
     void CreateDirectionalProjectile(int targetIndex, int directionX, int directionY);
     void CreateHomingProjectile(int targetIndex);
+    void CreateSectorProjectile(int targetIndex);
+    LegacyProjectile* AllocateProjectile(int ownerId, int startX, int startY);
+    void PushProjectileWithLegacyDefaults(LegacyProjectile* projectile);
     void DeleteOldProjectiles();
+    void DeleteProjectilesOwnedBy(int ownerId);
     void EmitEvent(const std::string& name, int value);
     void TriggerPassive(PassiveTiming timing);
     void UpdateEffects();
@@ -88,6 +101,14 @@ private:
     void TryReturnRequest(bool requested);
     void PlayLegacySound(int soundId);
     void TriggerLegacyEffect(int effectId);
+    bool CanUseLegacySkillSlot(int slot) const;
+    void StartLegacySkillCooldown(int slot);
+    void ApplyLegacySkillCost(int slot);
+    int ResolveLegacySkillSlot(int skillId) const;
+    int LegacySkillCostForSlot(int slot) const;
+    int LegacySkillPowerForSlot(int slot) const;
+    int ChooseProjectileLifeTime(int skillId) const;
+    int ResolveLegacyTargetIndex(int requestedIndex) const;
     int ClampDamage(int rawDamage) const;
     int EnergyGainForKind() const;
     int ProjectileCountForKind(int nearbyEnemyCount) const;
@@ -115,22 +136,49 @@ private:
     int burnTimer_;
     int shieldTimer_;
     int slowTimer_;
+    int silenceTimer_;
+    int rootTimer_;
+    int freezeTimer_;
+    int hasteTimer_;
     int skillCooldownA_;
     int skillCooldownB_;
     int skillCooldownC_;
     int skillCooldownD_;
+    int skillCooldownE_;
+    int skillCostA_;
+    int skillCostB_;
+    int skillCostC_;
+    int skillCostD_;
+    int skillPowerA_;
+    int skillPowerB_;
+    int skillPowerC_;
+    int skillPowerD_;
     int passiveCounterA_;
     int passiveCounterB_;
     int passiveCounterC_;
+    int passiveCounterD_;
+    int passiveCounterE_;
     int summonLifeTime_;
     int ownerIndex_;
     int hostIndex_;
+    int lastRequestedTargetIndex_;
+    int lastResolvedTargetIndex_;
+    int lastSkillSlot_;
+    int legacyPathFlags_;
+    int visualEffectHint_;
+    int soundEffectHint_;
     bool alive_;
     bool moving_;
     bool attacking_;
     bool passiveFlagA_;
     bool passiveFlagB_;
     bool passiveFlagC_;
+    bool passiveFlagD_;
+    bool passiveFlagE_;
+    bool pendingProjectile_;
+    bool pendingRecall_;
+    bool ownerLinkDirty_;
+    bool hostLinkDirty_;
     bool temporaryInvulnerable_;
     LegacySummonData* summon_;
     std::vector<LegacyProjectile*> projectiles_;

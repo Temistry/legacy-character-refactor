@@ -89,6 +89,23 @@ This portfolio documents the process of modularizing a legacy C++ Character syst
 전역 포인터 배열인 `gCharacters`도 포함했습니다.
 이 배열은 기존 호출부 호환성을 표현하기 위한 장치이며, index 접근과 lifetime 관리가 분산되는 문제를 보여줍니다.
 
+### Legacy Hotspot Map
+
+| Legacy hotspot | 코드에서 보이는 형태 | 분리 방향 |
+| --- | --- | --- |
+| 전역 접근 | `gCharacters`, `LegacyAt`, `LegacyRawAt` | `CharacterAccessor` |
+| 비대한 update | AI, timer, passive, projectile, return-request가 `Update()` 안에 있음 | `Character` lifecycle + collaborator |
+| skill 상태 누적 | `skillCooldownA~E`, cost, power, flag가 Character 멤버에 있음 | `SkillDefinitionTable`, `SkillExecutor` |
+| passive if-chain | `ApplyPassiveEffects()` 안에 시점과 조건이 함께 있음 | `PassiveRegistry` |
+| 상태 timer 누적 | poison, stun, burn, shield, slow, silence, root, freeze, haste timer | `TimedEffectList` |
+| projectile 함수 난립 | straight, multi, directional, homing, sector 생성 함수 | `ShotPattern` |
+| 소환/회수 책임 혼재 | owner, host, lifetime, cleanup이 Character 안에 있음 | 별도 ownership/lifetime module 후보 |
+| raw allocation | projectile와 summon 생성/삭제가 gameplay 함수에 흩어짐 | `CharacterSlotStore`, memory/pool boundary |
+| 매직넘버 | cooldown, cost, projectile lifetime 값이 분기 근처에 있음 | `CharacterTuningTable`, `SkillDefinitionTable` |
+
+이 표는 원본 구현을 옮긴 것이 아닙니다.
+오래된 Character 클래스에서 흔히 보이는 문제 유형을 새 toy code로 재구성한 것입니다.
+
 ## 리팩토링 목표
 
 개선 버전은 toy 동작을 비교 가능하게 유지하면서 구조를 바꿉니다.
@@ -119,9 +136,10 @@ gCharacters[index] / LegacyRegistry[index]
        -> CastSkill / UpdateSkillTimers
        -> ApplyPassiveEffects if-chain
        -> SummonUnit / RecallUnit / CleanupSummon
-       -> CreateStraightProjectile / CreateMultiProjectile
-       -> poisonTimer / stunTimer / burnTimer / shieldTimer
-       -> skillCooldownA / passiveFlagA / passiveCounterB
+       -> CreateStraightProjectile / CreateMultiProjectile / CreateSectorProjectile
+       -> poisonTimer / stunTimer / burnTimer / shieldTimer / silenceTimer
+       -> skillCooldownA~E / skillCostA~D / skillPowerA~D
+       -> passiveFlagA~E / passiveCounterA~E
        -> local utility calculations
        -> scattered new/delete
 ```
@@ -154,6 +172,8 @@ CharacterSlotStore
 | 생명주기 | `Update()` 안에 여러 책임이 섞임 | `Character` base lifecycle |
 | 타입별 차이 | `switch` / `if-chain` | virtual hook |
 | 계산 | `LegacyCharacter` 내부 함수 | `CharacterMath` |
+| tuning 값 | 타입 분기 근처의 매직넘버 | `CharacterTuningTable` |
+| skill 값 | cooldown, cost, power 멤버와 skill id 분기 | `SkillDefinitionTable`, `SkillExecutor` |
 | passive | 시점과 조건이 한 함수에 섞임 | `PassiveRegistry` |
 | projectile | 여러 생성 함수가 Character 안에 있음 | `ShotPattern` |
 | effect timer | Character 멤버로 직접 보관 | `TimedEffectList` |
