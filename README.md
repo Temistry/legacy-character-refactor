@@ -1,5 +1,9 @@
 # 레거시 C++ 게임 Character 시스템 리팩토링 예제
 
+이 프로젝트는 스파게티 구조로 변해가는 레거시 C++ Character 시스템을 지속 가능한 유지보수 구조로 모듈화하는 과정을 정리한 포트폴리오입니다.
+
+This portfolio documents the process of modularizing a legacy C++ Character system that was gradually turning into spaghetti code, with a focus on making the structure maintainable over time.
+
 이 저장소는 레거시 스타일의 C++ 게임 Character 시스템을 개선한 예제입니다.
 포트폴리오와 학습 목적으로 새로 작성한 샘플 코드이며, 실제 상용 프로젝트의 소스 코드나 데이터를 포함하지 않습니다.
 
