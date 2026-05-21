@@ -12,6 +12,9 @@ This portfolio documents the process of modularizing a legacy C++ Character syst
 - `src/legacy`: 하나의 `LegacyCharacter` 클래스에 책임이 집중된 구조
 - `src/refactored`: 접근, 생성, 업데이트, 계산, 타이밍 책임을 분리한 구조
 
+문서는 한국어와 영어를 같은 기준으로 병기합니다.
+README는 한국어를 먼저 배치하고, `docs/`는 각 섹션에서 Korean/English 내용을 함께 제공합니다.
+
 실제 회사명, 게임명, 내부 클래스명, 함수명, 변수명, 도메인명, 캐릭터명, 스킬명, 보스명, 서버명, 패킷명, 테이블명은 사용하지 않았습니다.
 게임 규칙과 수치도 실제 구현과 무관한 toy 값으로 작성했습니다.
 
