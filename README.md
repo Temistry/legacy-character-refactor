@@ -23,23 +23,39 @@
 
 ## 문제 구조
 
-레거시 샘플은 오래된 게임 클라이언트에서 자주 볼 수 있는 구조를 단순화한 것입니다.
-기능이 추가될수록 Character 클래스에 책임이 계속 누적됩니다.
+레거시 샘플은 오래된 C++ 게임 클라이언트에서 볼 수 있는 "거대한 Character 클래스" 문제를 설명하기 위해 만든 synthetic example입니다.
+실제 회사 코드를 복사하거나 1:1로 재현한 코드가 아닙니다.
+기능이 추가될수록 하나의 Character 클래스에 책임이 계속 누적되는 상황을 toy rule로 재구성했습니다.
 
 이 예제의 `LegacyCharacter`는 다음 책임을 함께 가집니다.
 
 - 캐릭터 초기화와 업데이트
+- 이동과 공격
 - 데미지와 사망 처리
+- AI 상태 처리
+- 스킬 쿨다운 처리
 - 타입별 분기
 - passive 실행 타이밍 분기
+- 소환과 회수 처리
 - projectile 동작
-- effect timer 상태
+- 상태이상 timer 상태
+- effect trigger와 sound trigger
 - return-request 처리
 - 간단한 계산 함수
+- 일부 new/delete 기반 임시 객체 관리
 
 이 구조에서는 변경 범위를 분리하기 어렵습니다.
 새 캐릭터 타입을 추가할 때 기존 타입을 처리하던 메서드 본문에 조건문을 계속 추가해야 합니다.
 특정 동작만 테스트하려고 해도 관련 없는 Character 상태를 함께 준비해야 합니다.
+
+`LegacyCharacter.h`에는 `skillCooldownA`, `skillCooldownB`, `passiveFlagA`, `poisonTimer`, `stunTimer`, `summonLifeTime` 같은 상태가 직접 추가되어 있습니다.
+새 기능이 들어올 때 별도 소유자를 만들지 않고 Character 멤버를 계속 늘리는 구조를 표현했습니다.
+
+`LegacyCharacter.cpp`에는 `ProcessAI`, `CastSkill`, `ApplyPassiveEffects`, `CreateStraightProjectile`, `CreateMultiProjectile`, `SummonUnit`, `CleanupSummon` 같은 함수가 같은 클래스에 들어 있습니다.
+각 함수는 toy rule만 사용하지만, 타입 분기와 중복된 예외 처리가 늘어나는 형태를 의도적으로 남겨 두었습니다.
+
+전역 포인터 배열인 `gCharacters`도 포함했습니다.
+이 배열은 기존 호출부 호환성을 표현하기 위한 장치이며, index 접근과 lifetime 관리가 분산되는 문제를 보여줍니다.
 
 ## 리팩토링 목표
 
@@ -64,16 +80,18 @@
 ```text
 Before
 
-LegacyRegistry[index]
+gCharacters[index] / LegacyRegistry[index]
   -> LegacyCharacter
-       -> Initialize
-       -> Update
-       -> ApplyDamage
-       -> switch by CharacterKind
-       -> passive if/switch branches
-       -> projectile branches
-       -> effect timer fields
-       -> local utility functions
+       -> Initialize / Update / ApplyDamage / Die
+       -> Move / Attack / ProcessAI
+       -> CastSkill / UpdateSkillTimers
+       -> ApplyPassiveEffects if-chain
+       -> SummonUnit / RecallUnit / CleanupSummon
+       -> CreateStraightProjectile / CreateMultiProjectile
+       -> poisonTimer / stunTimer / burnTimer / shieldTimer
+       -> skillCooldownA / passiveFlagA / passiveCounterB
+       -> local utility calculations
+       -> scattered new/delete
 ```
 
 ```text
@@ -95,6 +113,19 @@ CharacterFactory
 CharacterSlotStore
   -> reusable ownership slots
 ```
+
+| 문제 | Legacy 예제 | Refactored 예제 |
+| --- | --- | --- |
+| 접근 | `gCharacters[index]`, `LegacyRegistry[index]` | `CharacterAccessor` |
+| 생성 | 여러 함수 안에서 직접 처리 | `CharacterFactory` |
+| 재사용 | 호출 위치마다 정책이 흩어짐 | `CharacterSlotStore` |
+| 생명주기 | `Update()` 안에 여러 책임이 섞임 | `Character` base lifecycle |
+| 타입별 차이 | `switch` / `if-chain` | virtual hook |
+| 계산 | `LegacyCharacter` 내부 함수 | `CharacterMath` |
+| passive | 시점과 조건이 한 함수에 섞임 | `PassiveRegistry` |
+| projectile | 여러 생성 함수가 Character 안에 있음 | `ShotPattern` |
+| effect timer | Character 멤버로 직접 보관 | `TimedEffectList` |
+| 소환/회수 | 타입별 예외가 같은 함수에 섞임 | 독립 모듈로 분리 가능한 대상 |
 
 ## 주요 변경점
 
