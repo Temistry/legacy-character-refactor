@@ -1,64 +1,65 @@
-# Behavior-Preserving Refactoring of a Legacy C++ Game Character System
+# 레거시 C++ 게임 Character 시스템 리팩토링 예제
 
-This repository contains a small C++17 sample that refactors a legacy-style game character system.
-The code is anonymized and reconstructed for portfolio and educational use.
+이 저장소는 레거시 스타일의 C++ 게임 Character 시스템을 개선한 예제입니다.
+포트폴리오와 학습 목적으로 새로 작성한 샘플 코드이며, 실제 상용 프로젝트의 소스 코드나 데이터를 포함하지 않습니다.
 
-The sample compares two implementations of the same toy behavior:
+샘플은 같은 toy 동작을 두 가지 구조로 구현합니다.
 
-- `src/legacy`: a centralized `LegacyCharacter` implementation.
-- `src/refactored`: a modular implementation with access, creation, update, calculation, and timing responsibilities separated.
+- `src/legacy`: 하나의 `LegacyCharacter` 클래스에 책임이 집중된 구조
+- `src/refactored`: 접근, 생성, 업데이트, 계산, 타이밍 책임을 분리한 구조
 
-The sample does not include production source code, production data, internal names, or real game rules.
+실제 회사명, 게임명, 내부 클래스명, 함수명, 변수명, 도메인명, 캐릭터명, 스킬명, 보스명, 서버명, 패킷명, 테이블명은 사용하지 않았습니다.
+게임 규칙과 수치도 실제 구현과 무관한 toy 값으로 작성했습니다.
 
-## Overview
+## 개요
 
-The legacy version keeps most character-related behavior in one class.
-It uses array-style global access, type checks, and local helper functions inside `LegacyCharacter`.
+레거시 버전은 Character 관련 동작 대부분을 하나의 클래스에 둡니다.
+전역 배열 스타일 접근, 타입 분기, 내부 유틸리티 함수, 상태 업데이트 로직이 `LegacyCharacter` 안에 함께 들어 있습니다.
 
-The refactored version keeps the externally observable toy behavior the same.
-It introduces an access layer, a base character lifecycle, type-specific hooks, reusable object slots, stateless helper functions, passive handlers, shot patterns, and effect timer tracking.
+개선 버전은 외부에서 관찰되는 toy 동작을 유지하면서 구조를 나눕니다.
+접근 계층, 기본 생명주기, 타입별 hook, 재사용 슬롯, stateless helper, passive handler, shot pattern, effect timer tracker를 분리했습니다.
 
-The tests compare snapshots and event traces between the two implementations.
+테스트는 두 구현의 state snapshot과 event trace를 비교합니다.
 
-## Problem: Legacy Character System
+## 문제 구조
 
-The legacy sample represents a common structure in older game client code.
-Character behavior is added to one central class over time.
+레거시 샘플은 오래된 게임 클라이언트에서 자주 볼 수 있는 구조를 단순화한 것입니다.
+기능이 추가될수록 Character 클래스에 책임이 계속 누적됩니다.
 
-In this sample, `LegacyCharacter` contains several responsibilities:
+이 예제의 `LegacyCharacter`는 다음 책임을 함께 가집니다.
 
-- character initialization and update
-- damage and death handling
-- type-based behavior branches
-- passive timing branches
-- projectile behavior
-- effect timer state
-- return-request behavior
-- small utility calculations
+- 캐릭터 초기화와 업데이트
+- 데미지와 사망 처리
+- 타입별 분기
+- passive 실행 타이밍 분기
+- projectile 동작
+- effect timer 상태
+- return-request 처리
+- 간단한 계산 함수
 
-This structure makes changes harder to isolate.
-Adding a new character type requires edits inside the same methods that already handle existing types.
-Testing one behavior also requires setting up unrelated character state.
+이 구조에서는 변경 범위를 분리하기 어렵습니다.
+새 캐릭터 타입을 추가할 때 기존 타입을 처리하던 메서드 본문에 조건문을 계속 추가해야 합니다.
+특정 동작만 테스트하려고 해도 관련 없는 Character 상태를 함께 준비해야 합니다.
 
-## Refactoring Goals
+## 리팩토링 목표
 
-The refactored sample changes the structure while keeping the toy behavior comparable.
+개선 버전은 toy 동작을 비교 가능하게 유지하면서 구조를 바꿉니다.
 
-- `CharacterAccessor` wraps array-like character access.
-- `Character` owns the lifecycle order.
-- Derived character classes handle type-specific hook behavior.
-- `CharacterFactory` creates concrete character types.
-- `CharacterSlotStore` manages reusable character slots.
-- `CharacterMath` contains stateless calculations.
-- `PassiveRegistry` executes passive handlers by timing.
-- `ShotPattern` objects handle projectile variations.
-- `TimedEffectList` stores and updates effect durations.
-- `ReturnRequestModule` handles return-request events.
+- `CharacterAccessor`가 배열 스타일 Character 접근을 감쌉니다.
+- `Character`가 공통 생명주기 순서를 관리합니다.
+- 파생 Character 클래스가 타입별 hook 동작을 처리합니다.
+- `CharacterFactory`가 구체 Character 타입을 생성합니다.
+- `CharacterSlotStore`가 재사용 가능한 Character 슬롯을 관리합니다.
+- `CharacterMath`가 상태를 갖지 않는 계산 함수를 제공합니다.
+- `PassiveRegistry`가 실행 타이밍별 passive handler를 실행합니다.
+- `ShotPattern` 객체가 projectile 변형을 처리합니다.
+- `TimedEffectList`가 effect duration과 expiration event를 관리합니다.
+- `ReturnRequestModule`이 return-request event를 처리합니다.
 
-The implementation uses C++17 and the standard library only.
-It avoids framework dependencies and complex template code.
+구현은 C++17과 표준 라이브러리만 사용합니다.
+외부 라이브러리, 복잡한 템플릿 코드, 실제 게임 도메인 로직은 넣지 않았습니다.
 
-## Architecture Before / After
+## 구조 비교
 
 ```text
 Before
@@ -95,88 +96,89 @@ CharacterSlotStore
   -> reusable ownership slots
 ```
 
-## Key Changes
+## 주요 변경점
 
-### Global Access to CharacterAccessor
+### 전역 접근에서 CharacterAccessor로 분리
 
-The legacy sample exposes characters through an array-style registry.
-The refactored sample places `CharacterAccessor` between callers and stored character pointers.
+레거시 샘플은 배열 스타일 registry를 통해 Character에 접근합니다.
+개선 버전은 호출부와 저장된 Character 포인터 사이에 `CharacterAccessor`를 둡니다.
 
-`CharacterAccessor::operator[]` keeps array-like syntax for compatibility.
-It also checks invalid indexes and empty slots at the access boundary.
+`CharacterAccessor::operator[]`는 배열과 비슷한 접근 문법을 유지합니다.
+동시에 잘못된 index 접근과 비어 있는 slot 접근을 접근 계층에서 검사합니다.
 
-### Giant Character Class to Character Hierarchy
+### 거대한 Character 클래스에서 Character 계층으로 분리
 
-The legacy sample uses one class for common behavior and type-specific behavior.
-The refactored sample uses `Character` as the base class.
+레거시 샘플은 공통 동작과 타입별 동작을 하나의 클래스에서 처리합니다.
+개선 버전은 `Character`를 base class로 두고 공통 생명주기를 관리합니다.
 
-Concrete types such as `PlayerCharacter`, `MonsterCharacter`, `SummonCharacter`, and `EliteMonsterCharacter` override narrow hook points.
-Common lifecycle order remains in the base class.
+`PlayerCharacter`, `MonsterCharacter`, `SummonCharacter`, `EliteMonsterCharacter` 같은 구체 타입은 좁은 hook만 override합니다.
+생명주기 순서는 base class에 남겨 둡니다.
 
-### Type Branches to Virtual Hooks
+### 타입 분기에서 virtual hook으로 변경
 
-The legacy update path uses type checks inside `LegacyCharacter`.
-The refactored update path calls virtual hooks from the base lifecycle.
+레거시 update 경로는 `LegacyCharacter` 내부에서 타입을 확인합니다.
+개선 버전은 base lifecycle이 virtual hook을 호출합니다.
 
-New type-specific behavior can be added in a derived class without extending a large `switch` body in the main update method.
+새 타입의 동작은 파생 클래스에 추가할 수 있습니다.
+기존 update 메서드의 큰 `switch` 본문을 계속 늘리지 않아도 됩니다.
 
-### Scattered Creation to Factory and Reusable Slots
+### 생성 책임과 재사용 책임 분리
 
-`CharacterFactory` creates concrete character objects and attaches default collaborators.
-`CharacterSlotStore` tracks acquired and released character slots.
+`CharacterFactory`는 구체 Character 객체를 만들고 기본 collaborator를 연결합니다.
+`CharacterSlotStore`는 acquire/release 상태와 slot 재사용을 관리합니다.
 
-This separates object creation from object reuse.
-Tests can check acquire, release, capacity, and reuse behavior directly.
+생성 방식과 재사용 정책을 분리하면 테스트 범위도 분리됩니다.
+slot capacity, acquire, release, reuse 동작을 별도로 확인할 수 있습니다.
 
-### Utility Methods to Stateless Helpers
+### 내부 유틸리티 함수에서 stateless helper로 분리
 
-Small calculations are moved to `CharacterMath`.
-The helper functions do not store character state.
+간단한 계산 함수는 `CharacterMath`로 이동했습니다.
+이 함수들은 Character 상태를 저장하지 않습니다.
 
-This keeps calculation tests independent from character lifecycle setup.
+계산 로직은 Character 생명주기 setup 없이 테스트할 수 있습니다.
 
-### Passive Branches to Handler Registry
+### passive 분기에서 handler registry로 분리
 
-The legacy sample executes passive behavior through timing branches.
-The refactored sample stores passive handlers in `PassiveRegistry`.
+레거시 샘플은 passive 동작을 timing branch로 실행합니다.
+개선 버전은 `PassiveRegistry`에 handler를 등록하고 timing별로 실행합니다.
 
-Handlers are grouped by `PassiveTiming`:
+사용한 timing은 다음과 같습니다.
 
 - `OneShot`
 - `Passive`
 - `PostPassive`
 - `Dying`
 
-The execution timing is explicit in the lifecycle.
+실행 위치는 Character lifecycle 안에서 명시적으로 관리합니다.
 
-### Projectile Functions to Shot Strategies
+### projectile 함수에서 shot strategy로 분리
 
-Projectile variations are represented by `ShotPattern` implementations.
-The sample includes straight, multi-shot, directional, sector, and homing patterns.
+projectile 변형은 `ShotPattern` 구현체로 표현했습니다.
+샘플에는 straight, multi-shot, directional, sector, homing pattern이 있습니다.
 
-Each pattern emits generic toy events.
-The code does not model real projectile rules.
+각 pattern은 generic toy event만 발생시킵니다.
+실제 projectile 규칙은 구현하지 않았습니다.
 
-### Effect Timers to TimedEffectList
+### effect timer를 TimedEffectList로 분리
 
-The legacy sample stores effect timer state in `LegacyCharacter`.
-The refactored sample moves timer storage and expiration events to `TimedEffectList`.
+레거시 샘플은 effect timer 상태를 `LegacyCharacter`가 직접 보관합니다.
+개선 버전은 duration 저장과 expiration event 생성을 `TimedEffectList`로 이동했습니다.
 
-`Character` calls the tracker during update.
-The tracker owns duration updates and expiration event emission.
+`Character`는 update 중 tracker를 호출합니다.
+timer 상태 변경과 만료 event 생성은 tracker가 담당합니다.
 
-### Allocation Policy to Memory Pool Example
+### allocation policy 예제 분리
 
-`SimpleMemoryPool` is a small free-list example.
-It keeps allocation policy outside gameplay objects.
+`SimpleMemoryPool`은 단순 free-list 예제입니다.
+gameplay object 밖에서 allocation policy를 관리하는 형태를 보여주기 위해 포함했습니다.
 
-The sample pool is not a production allocator.
+이 memory pool은 production allocator가 아닙니다.
 
-## Behavior Preservation Strategy
+## 동치 보존 전략
 
-The sample treats behavior preservation as an implementation constraint.
+이 샘플은 구조 변경 후에도 외부 관찰 결과가 유지되는지 확인합니다.
 
-The refactored lifecycle keeps the order of the toy operations stable:
+개선 버전의 lifecycle은 toy operation 순서를 고정합니다.
 
 ```text
 Initialize
@@ -195,7 +197,7 @@ Dying passive
 death event
 ```
 
-The tests compare the externally visible results:
+테스트는 다음 결과를 비교합니다.
 
 - state snapshot
 - event trace
@@ -203,21 +205,21 @@ The tests compare the externally visible results:
 - reusable slot behavior
 - virtual hook call order
 
-For a real migration, the same approach would also check log order, effect trigger order, random call order, and frame timing reads.
+실제 마이그레이션에서는 log order, effect trigger order, random call order, frame timing read도 확인 대상이 됩니다.
 
-## Testing Strategy
+## 테스트
 
-The repository uses simple `assert`-based tests.
-No external test framework is required.
+테스트는 C++ 표준 라이브러리와 `assert`만 사용합니다.
+외부 테스트 프레임워크는 필요하지 않습니다.
 
-Test files:
+테스트 파일은 다음과 같습니다.
 
-- `CharacterEquivalenceTests.cpp`: compares legacy and refactored snapshots and event traces.
-- `CharacterAccessorTests.cpp`: checks valid access, invalid index access, and empty slot access.
-- `CharacterSlotStoreTests.cpp`: checks acquire, release, capacity, and reuse behavior.
-- `VirtualHookOrderTests.cpp`: checks lifecycle hook order.
+- `CharacterEquivalenceTests.cpp`: legacy와 refactored의 snapshot, event trace 비교
+- `CharacterAccessorTests.cpp`: 정상 접근, invalid index, empty slot 접근 확인
+- `CharacterSlotStoreTests.cpp`: acquire, release, capacity, reuse 확인
+- `VirtualHookOrderTests.cpp`: lifecycle hook 호출 순서 확인
 
-Build and run:
+빌드와 테스트 실행:
 
 ```bash
 cmake -S . -B build
@@ -225,7 +227,7 @@ cmake --build build --config Debug
 ctest --test-dir build -C Debug --output-on-failure
 ```
 
-## Repository Layout
+## 저장소 구조
 
 ```text
 docs/
@@ -241,34 +243,34 @@ src/
 tests/
 ```
 
-## Limitations
+## 한계
 
-This repository is a toy project.
+이 저장소는 toy project입니다.
 
-It does not include:
+포함하지 않는 항목은 다음과 같습니다.
 
-- production source code
-- production data
-- networking code
-- scripting integration
+- 실제 상용 프로젝트 소스 코드
+- 실제 게임 데이터
+- 네트워크 코드
+- 스크립트 연동
 - asset loading
 - content table parsing
-- real combat, skill, or AI rules
+- 실제 combat, skill, AI 규칙
 - production memory management
 
-The sample code uses small numeric values and generic event names.
+샘플 코드는 작은 숫자와 generic event 이름만 사용합니다.
 
-## Security and Anonymization Notice
+## 보안 및 익명화 원칙
 
-This repository is reconstructed from general refactoring experience.
-It does not contain company source code or internal project material.
+이 저장소는 일반화된 리팩토링 경험을 바탕으로 새로 작성했습니다.
+회사 소스 코드나 내부 프로젝트 자료를 포함하지 않습니다.
 
-The sample intentionally excludes:
+다음 항목은 제외하거나 일반화했습니다.
 
-- company names
-- game titles
-- internal project names
-- real class, function, variable, and file names
-- character, skill, named boss, item, region, server, packet, and table names
-- production algorithms, numeric tuning, data formats, and operational rules
-- internal comments, paths, log messages, screenshots, and source history
+- 회사명
+- 게임명
+- 내부 프로젝트명
+- 실제 클래스명, 함수명, 변수명, 파일명
+- 캐릭터명, 스킬명, 보스명, 아이템명, 지역명, 서버명, 패킷명, 테이블명
+- 실제 알고리즘, 수치 튜닝, 데이터 포맷, 운영 규칙
+- 내부 주석, 경로, 로그 메시지, 스크린샷, 소스 히스토리
