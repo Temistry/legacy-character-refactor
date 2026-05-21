@@ -1,5 +1,7 @@
 #include "CharacterMath.h"
 
+#include "Data/CharacterTuningTable.h"
+
 #include <algorithm>
 
 namespace portfolio
@@ -18,27 +20,18 @@ int ClampDuration(int durationFrames)
 
 int EnergyGainForKind(CharacterKind kind)
 {
-    switch (kind)
-    {
-    case CharacterKind::Player:
-        return 1;
-    case CharacterKind::Monster:
-        return 2;
-    case CharacterKind::EliteMonster:
-        return 3;
-    default:
-        return 0;
-    }
+    return FindCharacterTuning(kind).energyGainPerUpdate;
 }
 
 int ProjectileCountForKind(CharacterKind kind, int nearbyEnemyCount)
 {
+    const CharacterTuning& tuning = FindCharacterTuning(kind);
     switch (kind)
     {
     case CharacterKind::Monster:
-        return std::max(1, nearbyEnemyCount);
+        return std::max(1, nearbyEnemyCount + tuning.projectileBonus);
     case CharacterKind::EliteMonster:
-        return std::max(1, nearbyEnemyCount + 1);
+        return std::max(1, nearbyEnemyCount + tuning.projectileBonus);
     case CharacterKind::Summon:
         return nearbyEnemyCount > 0 ? 1 : 0;
     default:

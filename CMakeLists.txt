@@ -16,6 +16,8 @@ add_library(character_sample STATIC
     src/refactored/CharacterFactory.cpp
     src/refactored/CharacterMath.cpp
     src/refactored/CharacterSlotStore.cpp
+    src/refactored/Data/CharacterTuningTable.cpp
+    src/refactored/Data/SkillDefinitionTable.cpp
     src/refactored/Effects/TimedEffectList.cpp
     src/refactored/Passive/PassiveRegistry.cpp
     src/refactored/Projectile/ShotPattern.cpp

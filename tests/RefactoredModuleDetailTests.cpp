@@ -1,5 +1,7 @@
 #include "refactored/AI/AiDispatcher.h"
 #include "refactored/CharacterFactory.h"
+#include "refactored/Data/CharacterTuningTable.h"
+#include "refactored/Data/SkillDefinitionTable.h"
 #include "refactored/Effects/TimedEffectList.h"
 #include "refactored/Passive/PassiveRegistry.h"
 #include "refactored/Projectile/ShotPattern.h"
@@ -28,6 +30,10 @@ int main()
     assert(passives.HandlerCount() == 4);
     assert(passives.HandlerCount(PassiveTiming::Passive) == 1);
 
+    const CharacterTuning& monsterTuning = FindCharacterTuning(CharacterKind::Monster);
+    assert(monsterTuning.energyGainPerUpdate == 2);
+    assert(monsterTuning.defaultShotPattern == DefaultShotPattern::MultiShot);
+
     TimedEffectList effects;
     effects.AddEffect("StunLike", 2, true);
     assert(effects.ActiveCount() == 1);
@@ -52,11 +58,10 @@ int main()
     assert(decision.intent == AiIntent::RequestShot);
 
     SkillExecutor skills;
-    SkillData skill;
-    skill.id = 1;
-    skill.category = SkillCategory::Projectile;
-    skill.cooldownFrames = 3;
-    skill.energyCost = 0;
+    const SkillDefinition* definition = FindSkillDefinition(1);
+    assert(definition != nullptr);
+    assert(definition->cooldownFrames == 3);
+    SkillData skill = ToSkillData(*definition);
     SkillRuntimeState state;
     assert(skills.CanExecute(*character, skill, state));
     state = skills.StartCooldown(skill);

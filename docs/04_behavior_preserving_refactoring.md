@@ -29,6 +29,8 @@
 | common lifecycle order | `Character` base class |
 | type-specific behavior | virtual hooks |
 | calculation helpers | `CharacterMath` |
+| type-specific tuning values | `CharacterTuningTable` |
+| skill id based values | `SkillDefinitionTable` |
 | passive timing branches | `PassiveRegistry` |
 | projectile branches | `ShotPattern` |
 | effect timer state | `TimedEffectList` |

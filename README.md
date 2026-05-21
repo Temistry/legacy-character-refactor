@@ -25,6 +25,35 @@ This portfolio documents the process of modularizing a legacy C++ Character syst
 
 테스트는 두 구현의 state snapshot과 event trace를 비교합니다.
 
+## 적용하기 좋은 상황
+
+이 방식은 신규 시스템 설계보다 오래된 라이브 서비스 코드 정리에 더 적합합니다.
+
+예를 들어 다음 상황에서 사용할 수 있습니다.
+
+- 오래 운영된 프로젝트에서 특정 클래스나 함수에 예외 처리가 계속 누적된 경우
+- 동작은 유지되고 있지만 새 콘텐츠를 추가할 때마다 기존 분기를 수정해야 하는 경우
+- 매직넘버, 타입 분기, 전역 접근, 임시 플래그가 많아 변경 범위를 예측하기 어려운 경우
+- 담당자가 바뀌면서 아무도 전체 흐름을 확신하지 못하는 영역이 된 경우
+- 기능 확장은 필요하지만 전체 재작성은 일정이나 리스크 때문에 선택하기 어려운 경우
+
+이 예제는 이런 영역에서 공통 패턴을 먼저 찾고, 작은 경계부터 만드는 흐름을 다룹니다.
+
+## 정리 방식
+
+이 프로젝트에서 사용한 정리 순서는 다음과 같습니다.
+
+1. 스파게티 구조 안에서 반복되는 공통 패턴을 찾습니다.
+2. 공통 lifecycle은 base class로 이동합니다.
+3. 상속으로 표현하기 어려운 계산 로직은 stateless helper로 분리합니다.
+4. helper가 커지면 독립 모듈로 승격합니다.
+5. 매직넘버와 분기 조건은 table이나 data object로 이동할 수 있는 형태로 모읍니다.
+6. 흩어진 진입점은 하나의 interface로 모읍니다.
+7. 매개변수가 늘어나면 context object로 묶어 interface를 단순화합니다.
+8. 같은 과정을 다른 영역에도 반복합니다.
+
+처음부터 완성된 구조를 만들기보다, 동작을 유지하면서 변경 가능한 경계를 점진적으로 만듭니다.
+
 ## 문제 구조
 
 레거시 샘플은 오래된 C++ 게임 클라이언트에서 볼 수 있는 "거대한 Character 클래스" 문제를 설명하기 위해 만든 synthetic example입니다.
@@ -182,9 +211,11 @@ LegacyCharacter
 | `ReturnRequestModule` | `src/refactored/Return/ReturnRequestModule.*` | return-request 관련 event 처리를 Character 밖으로 분리합니다. |
 | `AiDispatcher` | `src/refactored/AI/AiDispatcher.*` | AI 실행 지점을 Character lifecycle 안의 별도 collaborator로 둡니다. |
 | `SimpleMemoryPool` | `src/refactored/Memory/SimpleMemoryPool.h` | gameplay object와 allocation policy를 분리하는 작은 free-list 예제입니다. |
+| `CharacterTuningTable` | `src/refactored/Data/CharacterTuningTable.*` | Character 종류별 tuning 값을 code-level table로 모읍니다. |
+| `SkillDefinitionTable` | `src/refactored/Data/SkillDefinitionTable.*` | skill id, cooldown, cost, power 값을 data object로 조회합니다. |
 
-refactored 쪽은 단순히 파일만 나눈 구조가 아닙니다.
-각 모듈이 자기 책임을 설명하는 작은 타입과 query API를 갖습니다.
+refactored 쪽은 파일 분리와 함께 테스트 가능한 경계를 둡니다.
+각 모듈은 자기 책임을 설명하는 작은 타입과 query API를 갖습니다.
 
 - `CharacterAccessor`: `TryGet`, `IsValidIndex`, `IsOccupied`, `Clear`
 - `CharacterSlotStore`: `Contains`, `AvailableCount`, `InUseCount`
@@ -193,8 +224,14 @@ refactored 쪽은 단순히 파일만 나눈 구조가 아닙니다.
 - `ShotPattern`: `ShotRequest`, `ShotSpawn`, `ShotPlan`, `BuildPlan`
 - `AiDispatcher`: `AiDecision`, `AiIntent`, `Decide`
 - `SkillExecutor`: `CanExecute`, `StartCooldown`, `SkillRuntimeState`
+- `CharacterTuningTable`: `CharacterTuning`, `FindCharacterTuning`
+- `SkillDefinitionTable`: `SkillDefinition`, `FindSkillDefinition`, `ToSkillData`
 
 이 차이 때문에 legacy 쪽은 “하나의 클래스 안에서 모든 것을 직접 처리하는 예제”로 보이고, refactored 쪽은 “책임을 가진 작은 모듈들이 협력하는 예제”로 보입니다.
+
+매직넘버와 분기 조건을 바로 외부 파일로 분리하지는 않았습니다.
+먼저 `CharacterTuningTable`과 `SkillDefinitionTable` 같은 code-level table/data object로 모았습니다.
+이 단계가 지나면 실제 프로젝트에서는 CSV, script table, binary table, editor-authored data asset 등으로 이동할 수 있습니다.
 
 예를 들어 legacy 쪽 `ApplyPassiveEffects()`는 실행 시점, 캐릭터 타입, skill 상태, hp 조건이 한 함수에 섞여 있습니다.
 refactored 쪽에서는 `PassiveRegistry`가 실행 타이밍을 기준으로 handler를 나눕니다.
@@ -249,7 +286,7 @@ flowchart LR
     subgraph After["After: Layer-Level Test Surface"]
         Access["Compatibility Layer\nCharacterAccessor"]
         Core["Lifecycle Core\nCharacter + virtual hooks"]
-        Modules["Focused Modules\nPassiveRegistry\nShotPattern\nTimedEffectList\nCharacterSlotStore\nCharacterMath\nAiDispatcher"]
+        Modules["Focused Modules\nPassiveRegistry\nShotPattern\nTimedEffectList\nCharacterSlotStore\nCharacterMath\nAiDispatcher\nData Tables"]
         Tests["Layer-level tests\n\nCharacterAccessorTests\nCharacterSlotStoreTests\nVirtualHookOrderTests\nRefactoredModuleDetailTests\nCharacterEquivalenceTests"]
 
         Access --> Core
@@ -267,7 +304,7 @@ flowchart LR
 | `CharacterAccessorTests` | access boundary | raw index access was scattered | invalid index and empty slot checks are isolated |
 | `CharacterSlotStoreTests` | lifetime/reuse | allocation policy was mixed with gameplay | acquire/release behavior is tested directly |
 | `VirtualHookOrderTests` | lifecycle order | update order was hidden inside one method | base lifecycle order is explicit |
-| `RefactoredModuleDetailTests` | module boundaries | passive/timer/shot/AI state lived near Character | modules expose small independent APIs |
+| `RefactoredModuleDetailTests` | module boundaries | passive/timer/shot/AI/data state lived near Character | modules expose small independent APIs |
 | `CharacterEquivalenceTests` | behavior preservation | refactoring can change state or event order | snapshot and event trace are compared |
 
 `CharacterAccessorTests`는 접근 계층을 검증합니다.
