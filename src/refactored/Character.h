@@ -12,6 +12,19 @@
 
 namespace portfolio
 {
+// Legacy shape:
+//   LegacyCharacter::Update() owned AI, timers, passive timing, projectile
+//   dispatch, return-request handling, and event ordering in one method.
+//
+// Refactored shape:
+//   Character keeps the lifecycle order stable and delegates narrow work to
+//   collaborators. Derived classes only override hooks for type-specific parts.
+//
+// Visual flow:
+//   Initialize
+//     -> Update: PreUpdate -> hook -> AI -> effects -> passive -> shot
+//               -> return-request -> post-passive -> hook -> Updated
+//     -> ApplyDamage -> Dying passive -> Die
 class Character
 {
 public:

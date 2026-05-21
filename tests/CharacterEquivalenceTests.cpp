@@ -7,6 +7,16 @@
 
 using namespace portfolio;
 
+// Usage example:
+//   Run the same toy input through the legacy and refactored shapes.
+//
+// Legacy problem:
+//   LegacyCharacter owns many responsibilities, so changing its internals can
+//   accidentally alter observable event order.
+//
+// Refactored check:
+//   The refactored modules may be split differently, but Snapshot() and Events()
+//   should still match for behavior-preserving changes.
 namespace
 {
 void RunScenario(CharacterKind kind)
@@ -57,4 +67,3 @@ int main()
     RunScenario(CharacterKind::EliteMonster);
     return 0;
 }
-

@@ -127,6 +127,68 @@ CharacterSlotStore
 | effect timer | Character 멤버로 직접 보관 | `TimedEffectList` |
 | 소환/회수 | 타입별 예외가 같은 함수에 섞임 | 독립 모듈로 분리 가능한 대상 |
 
+## 실제 모듈 기준 설명
+
+이 저장소는 모든 legacy 함수를 refactored 쪽에 1:1로 완전 포팅한 예제가 아닙니다.
+`legacy/`는 구조적 문제를 보여주는 synthetic example이고, `refactored/`는 그 문제를 어떤 모듈 경계로 나눌 수 있는지 보여주는 샘플입니다.
+
+```text
+LegacyCharacter
+  |
+  |-- global access risk
+  |     -> CharacterAccessor
+  |
+  |-- creation mixed with gameplay
+  |     -> CharacterFactory
+  |
+  |-- reuse and lifetime scattered
+  |     -> CharacterSlotStore
+  |
+  |-- update order mixed with type branches
+  |     -> Character base lifecycle + virtual hooks
+  |
+  |-- small calculations inside Character
+  |     -> CharacterMath
+  |
+  |-- passive if-chain
+  |     -> PassiveRegistry
+  |
+  |-- projectile creation branches
+  |     -> ShotPattern
+  |
+  |-- effect timer fields
+  |     -> TimedEffectList
+  |
+  |-- return-request branch
+  |     -> ReturnRequestModule
+  |
+  |-- AI branch inside Update
+        -> AiDispatcher
+```
+
+| Refactored 모듈 | 실제 파일 | 담당 책임 |
+| --- | --- | --- |
+| `CharacterAccessor` | `src/refactored/CharacterAccessor.*` | 배열 스타일 접근을 감싸고 invalid index, empty slot 접근을 검사합니다. |
+| `Character` | `src/refactored/Character.*` | `Initialize`, `Update`, `ApplyDamage`, `Die`의 실행 순서를 고정합니다. |
+| `CharacterFactory` | `src/refactored/CharacterFactory.*` | `CharacterKind`에 맞는 구체 Character 타입을 생성합니다. |
+| `CharacterSlotStore` | `src/refactored/CharacterSlotStore.*` | acquire/release 상태와 재사용 가능한 슬롯을 관리합니다. |
+| `CharacterMath` | `src/refactored/CharacterMath.*` | damage clamp, projectile count, snapshot 생성 같은 stateless 계산을 담당합니다. |
+| `PassiveRegistry` | `src/refactored/Passive/PassiveRegistry.*` | `OneShot`, `Passive`, `PostPassive`, `Dying` 타이밍별 handler를 실행합니다. |
+| `ShotPattern` | `src/refactored/Projectile/ShotPattern.*` | straight, multi-shot, directional, sector, homing projectile branch를 strategy로 분리합니다. |
+| `TimedEffectList` | `src/refactored/Effects/TimedEffectList.*` | effect duration 감소와 expiration event 생성을 담당합니다. |
+| `ReturnRequestModule` | `src/refactored/Return/ReturnRequestModule.*` | return-request 관련 event 처리를 Character 밖으로 분리합니다. |
+| `AiDispatcher` | `src/refactored/AI/AiDispatcher.*` | AI 실행 지점을 Character lifecycle 안의 별도 collaborator로 둡니다. |
+| `SimpleMemoryPool` | `src/refactored/Memory/SimpleMemoryPool.h` | gameplay object와 allocation policy를 분리하는 작은 free-list 예제입니다. |
+
+예를 들어 legacy 쪽 `ApplyPassiveEffects()`는 실행 시점, 캐릭터 타입, skill 상태, hp 조건이 한 함수에 섞여 있습니다.
+refactored 쪽에서는 `PassiveRegistry`가 실행 타이밍을 기준으로 handler를 나눕니다.
+
+legacy 쪽 `CreateStraightProjectile()`, `CreateMultiProjectile()`, `CreateDirectionalProjectile()`, `CreateHomingProjectile()`는 좌표와 방향 계산을 각 함수에 반복해서 둡니다.
+refactored 쪽에서는 `ShotPattern` 구현체가 projectile 변형을 담당합니다.
+
+legacy 쪽 `Update()`는 AI, timer, passive, projectile, summon cleanup, event 순서를 한 번에 처리합니다.
+refactored 쪽에서는 `Character`가 lifecycle 순서를 고정하고, 세부 책임은 collaborator로 넘깁니다.
+
 ## 주요 변경점
 
 ### 전역 접근에서 CharacterAccessor로 분리

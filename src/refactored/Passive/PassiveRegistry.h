@@ -8,6 +8,13 @@ namespace portfolio
 {
 class Character;
 
+// Legacy shape:
+//   One passive if-chain mixed timing, type checks, skill state, and hp checks.
+//
+// Refactored shape:
+//   PassiveRegistry executes handlers by explicit timing.
+//
+//   OneShot -> Passive -> PostPassive -> Dying
 class PassiveRegistry
 {
 public:
@@ -20,4 +27,3 @@ private:
     std::vector<PassiveHandler> handlers_;
 };
 }
-

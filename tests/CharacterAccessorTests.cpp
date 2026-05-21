@@ -8,6 +8,12 @@ using namespace portfolio;
 
 int main()
 {
+    // Legacy problem:
+    //   Raw global array access makes invalid indexes and empty slots easy to
+    //   miss at call sites.
+    //
+    // Refactored usage:
+    //   CharacterAccessor keeps array-like syntax but validates the boundary.
     CharacterSlotStore pool(1);
     Character* character = pool.Acquire(CharacterKind::Player);
     assert(character != nullptr);
@@ -41,4 +47,3 @@ int main()
 
     return 0;
 }
-

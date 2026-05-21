@@ -8,6 +8,14 @@
 
 namespace portfolio
 {
+// Legacy shape:
+//   Allocation and reuse policy appeared at multiple call sites.
+//
+// Refactored shape:
+//   CharacterSlotStore owns acquire/release state for reusable Character slots.
+//
+//   Acquire(kind) -> in-use slot
+//   Release(ptr)  -> reusable slot
 class CharacterSlotStore
 {
 public:
@@ -32,4 +40,3 @@ private:
     std::vector<Slot> slots_;
 };
 }
-

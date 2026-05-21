@@ -7,6 +7,14 @@
 
 namespace portfolio
 {
+// Legacy shape:
+//   Callers reached characters through raw global array indexes.
+//
+// Refactored shape:
+//   CharacterAccessor keeps array-like syntax while centralizing index and
+//   empty-slot validation.
+//
+//   caller -> CharacterAccessor[index] -> Character&
 class CharacterAccessor
 {
 public:
@@ -23,4 +31,3 @@ private:
     std::vector<Character*> slots_;
 };
 }
-

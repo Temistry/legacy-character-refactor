@@ -6,6 +6,13 @@
 
 namespace portfolio
 {
+// Legacy shape:
+//   poison/stun/burn/shield/effect timer fields accumulated in Character.
+//
+// Refactored shape:
+//   TimedEffectList owns duration updates and expiration events.
+//
+//   AddEffect(duration) -> Update(events) -> EffectExpired
 class TimedEffectList
 {
 public:
@@ -18,4 +25,3 @@ private:
     std::vector<int> durations_;
 };
 }
-

@@ -9,6 +9,14 @@ namespace portfolio
 {
 class Character;
 
+// Legacy shape:
+//   CreateStraightProjectile/CreateMultiProjectile/etc. repeated coordinate
+//   and count calculation inside Character.
+//
+// Refactored shape:
+//   ShotPattern moves each projectile variation behind a strategy interface.
+//
+//   Character -> ShotPattern::Emit() -> generic projectile event
 class ShotPattern
 {
 public:
@@ -23,4 +31,3 @@ std::unique_ptr<ShotPattern> CreateSectorShotPattern();
 std::unique_ptr<ShotPattern> CreateHomingShotPattern();
 std::unique_ptr<ShotPattern> CreateShotPatternForKind(CharacterKind kind);
 }
-

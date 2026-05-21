@@ -6,6 +6,13 @@ using namespace portfolio;
 
 int main()
 {
+    // Legacy problem:
+    //   Creation, reuse, and ownership rules can be scattered across gameplay
+    //   functions.
+    //
+    // Refactored usage:
+    //   CharacterSlotStore makes acquire/release/reuse behavior testable in one
+    //   place.
     CharacterSlotStore pool(2);
 
     Character* first = pool.Acquire(CharacterKind::Player);
@@ -32,4 +39,3 @@ int main()
 
     return 0;
 }
-

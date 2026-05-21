@@ -1,37 +1,101 @@
 # 04. Behavior-Preserving Refactoring
 
-Behavior preservation means more than returning the same final value. For game client code, visible behavior can depend on ordering.
+이 문서는 구조 변경 중 어떤 결과를 보존하고, 어떤 내부 구조를 분리했는지 설명한다.
+샘플은 실제 게임 규칙을 재현하지 않고, state snapshot과 event trace로 관찰 가능한 toy behavior를 비교한다.
 
-> Korean note: 게임 클라이언트 리팩토링에서는 결과값뿐 아니라 순서가 중요합니다.
+## Preserved Behavior
 
-## Observations to Preserve
+보존 대상은 내부 구현이 아니라 외부에서 관찰되는 결과다.
 
-The sample focuses on these observable outputs:
+- `CharacterStateSnapshot`
+- `std::vector<CharacterEvent>`
+- damage 적용 결과
+- death event 순서
+- effect expiration event 순서
+- passive event 순서
+- projectile event 발생 여부와 count
 
-- return value
-- state change
-- event order
-- effect trigger order
-- death handling order
+실제 마이그레이션에서는 여기에 log order, sound/effect trigger order, random call order, frame timing read order가 추가될 수 있다.
 
-In a production migration, additional observations can matter:
+## Structure Separated
 
-- log order
-- sound trigger order
-- visual effect trigger order
-- random call order
-- timing and frame read order
+분리 대상은 legacy class 안에 섞여 있던 책임이다.
 
-## Compatibility Layer
+| Legacy responsibility | Refactored target |
+| --- | --- |
+| global array-style access | `CharacterAccessor` |
+| concrete object creation | `CharacterFactory` |
+| reusable lifetime slots | `CharacterSlotStore` |
+| common lifecycle order | `Character` base class |
+| type-specific behavior | virtual hooks |
+| calculation helpers | `CharacterMath` |
+| passive timing branches | `PassiveRegistry` |
+| projectile branches | `ShotPattern` |
+| effect timer state | `TimedEffectList` |
+| return-request handling | `ReturnRequestModule` |
 
-`CharacterAccessor` keeps array-like access while introducing validation. This reduces the need for a large caller rewrite.
+## What CharacterEquivalenceTests Compares
 
-## Template Method Lifecycle
+`tests/CharacterEquivalenceTests.cpp` runs the same toy input against `LegacyCharacter` and refactored `Character`.
 
-The base class owns lifecycle order. Derived types can customize behavior through hooks, but they do not own the entire algorithm.
+```text
+same input
+  |
+  +--> LegacyCharacter
+  |      -> Snapshot()
+  |      -> Events()
+  |
+  +--> Refactored Character
+         -> Snapshot()
+         -> Events()
 
-## Snapshot and Trace Tests
+assert snapshots are equal
+assert event traces are equal
+```
 
-The tests compare `CharacterStateSnapshot`, `std::vector<CharacterEvent>`, reusable slot behavior, accessor failure behavior, and virtual hook call order.
+이 테스트는 구조가 달라져도 관찰 결과가 유지되는지 확인한다.
+특히 `Update`, `ApplyDamage`, effect expiration, passive timing, death event 순서가 깨지지 않는지 확인한다.
 
-> Korean note: 동치 보존 테스트는 새 구조가 더 좋아 보인다보다 같은 입력에서 같은 관찰 결과를 낸다를 확인합니다.
+## Snapshot and Trace Risk Reduction
+
+Snapshot 비교는 최종 상태 차이를 잡는다.
+
+- id
+- kind
+- health
+- energy
+- active effect count
+- alive
+
+Event trace 비교는 실행 순서 차이를 잡는다.
+
+- `Initialized`
+- `Passive:OneShot`
+- `PreUpdate`
+- `ProjectileSpawned`
+- `ReturnRequestChecked`
+- `Passive:PostPassive`
+- `Updated`
+- `Damaged`
+- `Died`
+
+상태만 비교하면 순서 문제가 빠질 수 있다.
+trace를 같이 비교하면 refactoring 중 호출 순서가 바뀌는 문제를 더 빨리 발견할 수 있다.
+
+## Compatibility Boundary
+
+`CharacterAccessor`는 legacy array-style access를 바로 제거하지 않는다.
+먼저 접근 계층을 둔다.
+
+```text
+legacy style
+  gCharacters[index]
+
+transition shape
+  CharacterAccessor[index]
+
+later shape
+  explicit Character API
+```
+
+이 단계는 대규모 호출부를 한 번에 바꾸지 않기 위한 중간 구조다.

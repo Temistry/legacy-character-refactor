@@ -9,6 +9,15 @@ using namespace portfolio;
 
 namespace
 {
+// Usage example:
+//   The base Character lifecycle controls the ordering.
+//
+// Legacy problem:
+//   Type branches inside one Update method can reorder behavior by accident.
+//
+// Refactored usage:
+//   Derived classes customize narrow hooks while the base class keeps the
+//   sequence stable.
 class HookOrderCharacter : public Character
 {
 public:
@@ -52,4 +61,3 @@ int main()
 
     return 0;
 }
-
